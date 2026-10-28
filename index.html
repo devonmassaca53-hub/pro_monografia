@@ -1,0 +1,565 @@
+﻿<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>EDM · MonitorMesh — Central Nampula-Cidade</title>
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css">
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/bold/style.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Schibsted+Grotesk:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="css/styles.css">
+<link rel="stylesheet" href="css/responsive.css">
+</head>
+<body>
+
+<aside class="sidebar" id="sidebar">
+  <div class="side-brand">
+    <div class="side-brand-mark"><i class="ph ph-lightning"></i></div>
+    <div class="side-brand-info">
+      <div class="name">Monitor<em>Mesh</em></div>
+      <div class="sub">Central Nampula</div>
+    </div>
+  </div>
+  <nav class="side-nav" role="tablist">
+    <div class="nav-group">
+      <span class="nav-group-label">Monitorização</span>
+      <button class="nav-item active" data-tab="p1" role="tab" title="Visão Geral">
+        <i class="ph ph-gauge"></i><span class="nav-label">Visão Geral</span><span class="nav-badge" id="navBadge">2</span>
+      </button>
+      <button class="nav-item" data-tab="p2" role="tab" title="Mapa & PTs">
+        <i class="ph ph-map-pin"></i><span class="nav-label">Mapa & PTs</span>
+      </button>
+    </div>
+    <div class="nav-group">
+      <span class="nav-group-label">Análise</span>
+      <button class="nav-item" data-tab="p3" role="tab" title="Histórico">
+        <i class="ph ph-chart-line"></i><span class="nav-label">Histórico</span>
+      </button>
+      <button class="nav-item" data-tab="p4" role="tab" title="Rede LoRa">
+        <i class="ph ph-broadcast"></i><span class="nav-label">Rede LoRa</span>
+      </button>
+    </div>
+    <div class="nav-group">
+      <span class="nav-group-label">Sistema</span>
+      <button class="nav-item" data-tab="p5" role="tab" title="Configuração">
+        <i class="ph ph-sliders"></i><span class="nav-label">Configuração</span>
+      </button>
+    </div>
+  </nav>
+  <div class="side-footer">
+    <div class="side-operator">
+      <div class="side-operator-avatar">JS</div>
+      <div class="side-operator-info">
+        <div class="name">J. Silva</div>
+        <div class="role">Turno manhã</div>
+      </div>
+    </div>
+  </div>
+</aside>
+
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="fecharSidebar()"></div>
+
+<main class="main">
+  <header class="topbar">
+    <div class="topbar-left">
+      <button class="hamburger" onclick="toggleSidebar()" aria-label="Menu"><i class="ph ph-list"></i></button>
+      <div class="crumb">
+        <span>EDM</span>
+        <i class="ph ph-caret-right sep"></i>
+        <span>Nampula</span>
+        <i class="ph ph-caret-right sep"></i>
+        <span class="here">Central Nampula-Cidade</span>
+      </div>
+      <span class="demo-badge" title="Interface a correr com dados gerados aleatoriamente para demonstração">
+        <i class="ph ph-flask"></i> MODO DEMO · Dados Simulados
+      </span>
+    </div>
+    <div class="topbar-right">
+      <div class="status-stack">
+        <span class="s"><span class="dot"></span>Rede OK</span>
+        <span class="s"><span class="dot brass"></span><span id="statusAlertas">2 Alertas</span></span>
+        <span class="s"><span class="dot"></span>Sync</span>
+      </div>
+      <div class="sync-badge">
+        <i class="ph ph-paper-plane-tilt"></i>
+        <span>Província: <span class="ok">há 12 min ✓</span></span>
+      </div>
+      <button class="btn icon-only" onclick="toggleTheme()" aria-label="Tema" title="Alternar tema">
+        <i class="ph ph-moon" id="themeIcon"></i>
+      </button>
+      <button class="btn icon-only" onclick="exportarCSV()" aria-label="Exportar" title="Exportar CSV">
+        <i class="ph ph-download-simple"></i>
+      </button>
+      <button class="btn" onclick="abrirHandover()">
+        <i class="ph ph-swap"></i> <span>Handover</span>
+      </button>
+    </div>
+  </header>
+
+  <div class="content">
+
+    <!-- PANEL 1 -->
+    <section class="panel active" id="p1">
+      <div class="network-summary">
+        <div class="ns-header">
+          <div class="ns-title"><i class="ph ph-info"></i> Resumo da Rede</div>
+          <div class="ns-tag">CONTEXTO OPERACIONAL</div>
+        </div>
+        <div class="ns-body">
+          <div class="ns-item"><div class="ns-icon copper"><i class="ph ph-buildings"></i></div><div class="ns-content"><div class="ns-label">Central</div><div class="ns-value">Nampula-Cidade</div></div></div>
+          <div class="ns-item"><div class="ns-icon steel"><i class="ph ph-map-trifold"></i></div><div class="ns-content"><div class="ns-label">Província</div><div class="ns-value">Nampula</div></div></div>
+          <div class="ns-item"><div class="ns-icon patina"><i class="ph ph-broadcast"></i></div><div class="ns-content"><div class="ns-label">PTs</div><div class="ns-value mono">47</div></div></div>
+          <div class="ns-item"><div class="ns-icon brass"><i class="ph ph-path"></i></div><div class="ns-content"><div class="ns-label">Linhas</div><div class="ns-value mono">6</div></div></div>
+          <div class="ns-item"><div class="ns-icon steel"><i class="ph ph-users-three"></i></div><div class="ns-content"><div class="ns-label">Clientes</div><div class="ns-value mono">12 340</div></div></div>
+          <div class="ns-item"><div class="ns-icon copper"><i class="ph ph-user-circle"></i></div><div class="ns-content"><div class="ns-label">Turno</div><div class="ns-value">Manhã</div></div></div>
+        </div>
+      </div>
+
+      <div class="kpi-grid">
+        <div class="kpi">
+          <div class="kpi-head"><span class="kpi-label">PTs Online</span><div class="kpi-icon patina"><i class="ph ph-broadcast"></i></div></div>
+          <div class="kpi-value"><span class="kpi-num" id="kpiOnline">3</span><span class="kpi-unit">/3</span></div>
+          <div class="kpi-foot"><span class="up" id="kpiOnlineTrend">▲ 100%</span> disponibilidade</div>
+          <div class="kpi-spark-real"><canvas id="sparkOnline"></canvas></div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-head"><span class="kpi-label">Carga Média</span><div class="kpi-icon copper"><i class="ph ph-lightning"></i></div></div>
+          <div class="kpi-value"><span class="kpi-num" id="kpiCarga">78</span><span class="kpi-unit">%</span></div>
+          <div class="kpi-foot"><span class="up">▲ +5%</span> 4h</div>
+          <div class="kpi-spark-real"><canvas id="sparkCarga"></canvas></div>
+        </div>
+        <div class="kpi alert">
+          <div class="kpi-head"><span class="kpi-label">Alertas</span><div class="kpi-icon rust"><i class="ph ph-warning-circle"></i></div></div>
+          <div class="kpi-value"><span class="kpi-num" id="kpiAlertas">2</span></div>
+          <div class="kpi-foot"><span class="down">1 crítico</span> em curso</div>
+          <div class="kpi-spark-real"><canvas id="sparkAlertas"></canvas></div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-head"><span class="kpi-label">Temp. Média</span><div class="kpi-icon brass"><i class="ph ph-thermometer-hot"></i></div></div>
+          <div class="kpi-value"><span class="kpi-num" id="kpiTemp">42</span><span class="kpi-unit">°C</span></div>
+          <div class="kpi-foot"><span class="up">▲ +2°</span> manhã</div>
+          <div class="kpi-spark-real"><canvas id="sparkTemp"></canvas></div>
+        </div>
+      </div>
+
+      <div class="row-main">
+        <div class="section">
+          <div class="section-head">
+            <div class="section-title"><i class="ph ph-map-trifold"></i> PTs da Central</div>
+            <div class="section-tag">GPS · NAMPULA-CIDADE</div>
+          </div>
+          <div id="mapCentral"></div>
+        </div>
+        <div class="section">
+          <div class="section-head" style="flex-direction:column;align-items:stretch;gap:8px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <div class="section-title"><i class="ph ph-list-bullets"></i> Postos</div>
+              <div class="section-tag" id="lastUpdateTag">AGORA</div>
+            </div>
+            <div class="line-filter" id="lineFilter">
+              <button class="line-chip active" data-line="all">Todas</button>
+              <button class="line-chip" data-line="L-01">L-01</button>
+              <button class="line-chip" data-line="L-02">L-02</button>
+              <button class="line-chip" data-line="L-03">L-03</button>
+              <button class="line-chip" data-line="L-04">L-04</button>
+            </div>
+          </div>
+          <div class="pt-list" id="ptList"></div>
+        </div>
+      </div>
+
+      <div class="row-2">
+        <div class="section">
+          <div class="section-head">
+            <div class="section-title"><i class="ph ph-bell-ringing"></i> Alertas Recentes</div>
+            <div class="section-tag">ÚLTIMOS 8</div>
+          </div>
+          <div class="feed" id="alertFeed"></div>
+        </div>
+        <div class="section">
+          <div class="section-head">
+            <div class="section-title"><i class="ph ph-chart-area-line"></i> Carga · 6h</div>
+            <div class="section-tag">TEMPO REAL</div>
+          </div>
+          <div class="chart-box short"><canvas id="miniChart"></canvas></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- PANEL 2 -->
+    <section class="panel" id="p2">
+      <div class="row-main" style="margin-bottom:0;">
+        <div class="section">
+          <div class="section-head">
+            <div class="section-title"><i class="ph ph-map-trifold"></i> Mapa Interactivo</div>
+            <div class="section-tag">CLIQUE NOS MARCADORES</div>
+          </div>
+          <div id="mapFull" style="height:500px;"></div>
+        </div>
+        <div class="section">
+          <div class="section-head" style="flex-direction:column;align-items:stretch;gap:8px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <div class="section-title"><i class="ph ph-list-dashes"></i> Todos os PTs</div>
+              <div class="section-tag">DETALHADO</div>
+            </div>
+            <div class="line-filter" id="lineFilterFull">
+              <button class="line-chip active" data-line="all">Todas</button>
+              <button class="line-chip" data-line="L-01">L-01</button>
+              <button class="line-chip" data-line="L-02">L-02</button>
+              <button class="line-chip" data-line="L-03">L-03</button>
+              <button class="line-chip" data-line="L-04">L-04</button>
+            </div>
+          </div>
+          <div class="pt-list" id="ptListFull" style="max-height:500px;"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- PANEL 3 -->
+    <section class="panel" id="p3">
+      <div class="row-equal">
+        <div class="section">
+          <div class="section-head">
+            <div class="section-title"><i class="ph ph-chart-line"></i> Carga (kW) · 12h</div>
+            <div class="section-tag">POTÊNCIA ACTIVA</div>
+          </div>
+          <div class="chart-box tall"><canvas id="chartCarga"></canvas></div>
+        </div>
+        <div class="section">
+          <div class="section-head">
+            <div class="section-title"><i class="ph ph-thermometer-hot"></i> Temperatura · 12h</div>
+            <div class="section-tag">ENROLAMENTOS</div>
+          </div>
+          <div class="chart-box tall"><canvas id="chartTemp"></canvas></div>
+        </div>
+        <div class="section">
+          <div class="section-head">
+            <div class="section-title"><i class="ph ph-lightning"></i> Fator de Potência</div>
+            <div class="section-tag">EFICIÊNCIA</div>
+          </div>
+          <div class="chart-box tall"><canvas id="chartFP"></canvas></div>
+        </div>
+        <div class="section">
+          <div class="section-head">
+            <div class="section-title"><i class="ph ph-signal-high"></i> SNR · LoRa</div>
+            <div class="section-tag">QUALIDADE SINAL</div>
+          </div>
+          <div class="chart-box tall"><canvas id="chartSNR"></canvas></div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-head">
+          <div class="section-title"><i class="ph ph-table"></i> Dados Consolidados</div>
+          <div class="section-tag">ÚLTIMAS 8 AMOSTRAS</div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Hora</th>
+                <th class="num-col">PT Central · kW</th>
+                <th class="num-col">PT Aeroporto · kW</th>
+                <th class="num-col">PT Namicopo · kW</th>
+                <th class="num-col">Temp. Média · °C</th>
+                <th class="num-col">FP Médio</th>
+              </tr>
+            </thead>
+            <tbody id="histBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- PANEL 4 — REDE LoRa -->
+    <section class="panel" id="p4">
+      <div class="row-equal">
+        <div class="section">
+          <div class="section-head">
+            <div class="section-title"><i class="ph ph-tree-structure"></i> Topologia da Rede</div>
+            <div class="section-tag">MESH · SIMULAÇÃO</div>
+          </div>
+          <div class="topo-viz">
+            <div class="topo-toolbar">
+              <div class="topo-status">
+                <span class="status-dot ok" id="topoStatusDot"></span>
+                <span id="topoStatusText">Estável</span>
+                <span class="status-timer" id="topoTimer"></span>
+              </div>
+              <button class="topo-btn" onclick="simularFalha()" id="btnSimularFalha">
+                <i class="ph ph-warning"></i> Simular falha do repetidor
+              </button>
+            </div>
+
+            <div class="topo-svg-container">
+              <svg viewBox="0 0 800 300" class="topo-svg" preserveAspectRatio="xMidYMid meet">
+                <defs>
+                  <linearGradient id="wireGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" stop-color="#5aa88a" /><stop offset="100%" stop-color="#7ac4a4" />
+                  </linearGradient>
+                  <linearGradient id="wireAltGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" stop-color="#d0824a" /><stop offset="50%" stop-color="#eda66c" /><stop offset="100%" stop-color="#d0824a" />
+                  </linearGradient>
+                  <radialGradient id="nodeGradPT" cx="30%" cy="30%"><stop offset="0%" stop-color="#7ac4a4" /><stop offset="100%" stop-color="#5aa88a" /></radialGradient>
+                  <radialGradient id="nodeGradREP" cx="30%" cy="30%"><stop offset="0%" stop-color="#eda66c" /><stop offset="100%" stop-color="#d0824a" /></radialGradient>
+                  <radialGradient id="nodeGradGW" cx="30%" cy="30%"><stop offset="0%" stop-color="#8ab0d4" /><stop offset="100%" stop-color="#6a90b8" /></radialGradient>
+                  <radialGradient id="nodeGradFailed" cx="30%" cy="30%"><stop offset="0%" stop-color="#8a4a42" /><stop offset="100%" stop-color="#6e3a34" /></radialGradient>
+                  <filter id="glowDot" x="-50%" y="-50%" width="200%" height="200%">
+                    <feGaussianBlur stdDeviation="3" result="blur" />
+                    <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
+                  </filter>
+                  <pattern id="dotGrid" x="0" y="0" width="30" height="30" patternUnits="userSpaceOnUse">
+                    <circle cx="1" cy="1" r="1" fill="#444e5a" />
+                  </pattern>
+                </defs>
+
+                <rect x="0" y="0" width="800" height="300" fill="url(#dotGrid)" opacity="0.4" />
+
+                <path id="wire1" class="topo-wire active" d="M 130 150 Q 265 80 400 150" fill="none" stroke="url(#wireGrad)" stroke-width="2.5" stroke-linecap="round" />
+                <path id="wire2" class="topo-wire active" d="M 400 150 Q 535 80 670 150" fill="none" stroke="url(#wireGrad)" stroke-width="2.5" stroke-linecap="round" />
+
+                <path id="wireAltBottom" class="topo-wire" d="M 130 150 Q 400 260 670 150" fill="none" stroke="url(#wireAltGrad)" stroke-width="3" stroke-linecap="round" opacity="0" />
+                <path id="wireAltTop" class="topo-wire" d="M 130 150 Q 400 40 670 150" fill="none" stroke="url(#wireAltGrad)" stroke-width="3" stroke-linecap="round" opacity="0" />
+
+                <g id="packetsNormal">
+                  <circle r="4" fill="#7ac4a4" filter="url(#glowDot)"><animateMotion dur="2.4s" repeatCount="indefinite" path="M 130 150 Q 265 80 400 150" /></circle>
+                  <circle r="3.5" fill="#7ac4a4" filter="url(#glowDot)" opacity="0.7"><animateMotion dur="2.4s" begin="1.2s" repeatCount="indefinite" path="M 130 150 Q 265 80 400 150" /></circle>
+                  <circle r="4" fill="#7ac4a4" filter="url(#glowDot)"><animateMotion dur="2.4s" begin="0.6s" repeatCount="indefinite" path="M 400 150 Q 535 80 670 150" /></circle>
+                  <circle r="3.5" fill="#7ac4a4" filter="url(#glowDot)" opacity="0.7"><animateMotion dur="2.4s" begin="1.8s" repeatCount="indefinite" path="M 400 150 Q 535 80 670 150" /></circle>
+                </g>
+
+                <g id="packetsAltBottom" opacity="0">
+                  <circle r="4.5" fill="#eda66c" filter="url(#glowDot)"><animateMotion dur="3.2s" repeatCount="indefinite" path="M 130 150 Q 400 260 670 150" /></circle>
+                  <circle r="4" fill="#eda66c" filter="url(#glowDot)" opacity="0.7"><animateMotion dur="3.2s" begin="1.1s" repeatCount="indefinite" path="M 130 150 Q 400 260 670 150" /></circle>
+                  <circle r="3.5" fill="#eda66c" filter="url(#glowDot)" opacity="0.5"><animateMotion dur="3.2s" begin="2.2s" repeatCount="indefinite" path="M 130 150 Q 400 260 670 150" /></circle>
+                </g>
+
+                <g id="packetsAltTop" opacity="0">
+                  <circle r="4.5" fill="#eda66c" filter="url(#glowDot)"><animateMotion dur="3.2s" begin="0.4s" repeatCount="indefinite" path="M 130 150 Q 400 40 670 150" /></circle>
+                  <circle r="4" fill="#eda66c" filter="url(#glowDot)" opacity="0.7"><animateMotion dur="3.2s" begin="1.5s" repeatCount="indefinite" path="M 130 150 Q 400 40 670 150" /></circle>
+                  <circle r="3.5" fill="#eda66c" filter="url(#glowDot)" opacity="0.5"><animateMotion dur="3.2s" begin="2.6s" repeatCount="indefinite" path="M 130 150 Q 400 40 670 150" /></circle>
+                </g>
+
+                <g id="nodePT" class="topo-node">
+                  <circle cx="130" cy="150" r="38" class="node-ring" fill="none" stroke="#5aa88a" stroke-width="2" opacity="0.4" />
+                  <circle cx="130" cy="150" r="32" class="node-core" fill="url(#nodeGradPT)" stroke="rgba(255,255,255,0.15)" stroke-width="2" />
+                  <text x="130" y="155" text-anchor="middle" class="node-text" fill="#fff" font-size="10" font-weight="700" font-family="JetBrains Mono, monospace">PT-01</text>
+                  <text x="130" y="210" text-anchor="middle" class="node-subtext" fill="#6e7a89" font-size="9" font-family="JetBrains Mono, monospace" letter-spacing="0.5">SENSOR</text>
+                </g>
+
+                <g id="nodeREP" class="topo-node">
+                  <circle cx="400" cy="150" r="38" class="node-ring" fill="none" stroke="#d0824a" stroke-width="2" opacity="0.4" />
+                  <circle cx="400" cy="150" r="32" class="node-core" fill="url(#nodeGradREP)" stroke="rgba(255,255,255,0.15)" stroke-width="2" />
+                  <text x="400" y="155" text-anchor="middle" class="node-text" fill="#fff" font-size="10" font-weight="700" font-family="JetBrains Mono, monospace">REP-01</text>
+                  <text x="400" y="210" text-anchor="middle" class="node-subtext" fill="#6e7a89" font-size="9" font-family="JetBrains Mono, monospace" letter-spacing="0.5">REPETIDOR</text>
+                  <g class="node-x" opacity="0" style="transition: opacity 0.3s ease;">
+                    <line x1="382" y1="132" x2="418" y2="168" stroke="#fff" stroke-width="3.5" stroke-linecap="round" />
+                    <line x1="418" y1="132" x2="382" y2="168" stroke="#fff" stroke-width="3.5" stroke-linecap="round" />
+                  </g>
+                </g>
+
+                <g id="nodeGW" class="topo-node">
+                  <circle cx="670" cy="150" r="38" class="node-ring" fill="none" stroke="#6a90b8" stroke-width="2" opacity="0.4" />
+                  <circle cx="670" cy="150" r="32" class="node-core" fill="url(#nodeGradGW)" stroke="rgba(255,255,255,0.15)" stroke-width="2" />
+                  <text x="670" y="155" text-anchor="middle" class="node-text" fill="#fff" font-size="10" font-weight="700" font-family="JetBrains Mono, monospace">GW-01</text>
+                  <text x="670" y="210" text-anchor="middle" class="node-subtext" fill="#6e7a89" font-size="9" font-family="JetBrains Mono, monospace" letter-spacing="0.5">GATEWAY</text>
+                </g>
+              </svg>
+            </div>
+
+            <div class="topo-legend">
+              <span class="legend-item"><span class="legend-dot patina"></span> Nó activo</span>
+              <span class="legend-item"><span class="legend-dot copper"></span> Rotas alternativas</span>
+              <span class="legend-item"><span class="legend-dot rust"></span> Falha</span>
+              <span class="legend-item"><span class="legend-dot steel"></span> Gateway</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="section-head">
+            <div class="section-title"><i class="ph ph-chart-bar"></i> Estatísticas</div>
+            <div class="section-tag">LoRa</div>
+          </div>
+          <div class="modal-grid" style="padding:14px;">
+            <div class="modal-cell"><div class="lbl">SNR Médio</div><div class="val">8.2<span class="u">dB</span></div></div>
+            <div class="modal-cell"><div class="lbl">RSSI Médio</div><div class="val">−78<span class="u">dBm</span></div></div>
+            <div class="modal-cell"><div class="lbl">Pacotes</div><div class="val">14 832</div></div>
+            <div class="modal-cell"><div class="lbl">Taxa entrega</div><div class="val ok">98.7<span class="u">%</span></div></div>
+            <div class="modal-cell"><div class="lbl">Latência</div><div class="val">124<span class="u">ms</span></div></div>
+            <div class="modal-cell"><div class="lbl">Duty Cycle</div><div class="val">0.002<span class="u">%</span></div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-head">
+          <div class="section-title"><i class="ph ph-terminal-window"></i> Log da Rede</div>
+          <div class="section-tag">EVENTOS</div>
+        </div>
+        <div class="feed" id="netLog" style="max-height:180px;"></div>
+      </div>
+    </section>
+
+    <!-- PANEL 5 — CONFIGURAÇÃO (COM SYSTEM HEALTH) -->
+    <section class="panel" id="p5">
+
+      <!-- ═══ SYSTEM HEALTH — ESTADO DO SISTEMA ═══ -->
+      <div class="system-health">
+        <div class="ns-header">
+          <div class="ns-title"><i class="ph ph-pulse"></i> Estado do Sistema</div>
+          <div class="ns-tag" id="healthTimestamp">AGORA</div>
+        </div>
+
+        <div class="health-summary">
+          <div class="health-score">
+            <span class="health-score-num" id="healthScoreNum">14</span>
+            <span class="health-score-sep">/</span>
+            <span class="health-score-total" id="healthScoreTotal">14</span>
+            <div class="health-score-label">componentes</div>
+          </div>
+          <div class="health-breakdown" id="healthBreakdown">
+            <div class="hb-item ok"><span class="dot"></span><strong id="hbOk">14</strong> operacionais</div>
+            <div class="hb-item warn"><span class="dot brass"></span><strong id="hbWarn">0</strong> atenção</div>
+            <div class="hb-item crit"><span class="dot rust"></span><strong id="hbCrit">0</strong> crítico</div>
+            <div class="hb-item off"><span class="dot" style="background:var(--ink-2);box-shadow:none;"></span><strong id="hbOff">0</strong> offline</div>
+          </div>
+          <div class="health-pct">
+            <div class="health-pct-val" id="healthPct">100%</div>
+            <div class="health-pct-label">saúde global</div>
+          </div>
+        </div>
+
+        <div class="health-groups" id="healthGroups"></div>
+      </div>
+
+      <!-- PARÂMETROS + NÓS DA REDE -->
+      <div class="row-equal">
+        <div class="section">
+          <div class="section-head">
+            <div class="section-title"><i class="ph ph-sliders-horizontal"></i> Parâmetros</div>
+            <div class="section-tag">LoRa MESH</div>
+          </div>
+          <div>
+            <div class="cfg-row"><span class="cfg-label"><i class="ph ph-radio"></i> Spreading Factor</span><span class="cfg-val">SF11</span></div>
+            <div class="cfg-row"><span class="cfg-label"><i class="ph ph-clock"></i> Intervalo transmissão</span><span class="cfg-val">30 s</span></div>
+            <div class="cfg-row"><span class="cfg-label"><i class="ph ph-lightning"></i> Limiar sobrecarga</span><span class="cfg-val">85 %</span></div>
+            <div class="cfg-row"><span class="cfg-label"><i class="ph ph-thermometer-hot"></i> Limiar temperatura</span><span class="cfg-val">45 °C</span></div>
+            <div class="cfg-row"><span class="cfg-label"><i class="ph ph-arrows-clockwise"></i> Reconfiguração auto</span><span class="switch on" onclick="this.classList.toggle('on')"></span></div>
+            <div class="cfg-row"><span class="cfg-label"><i class="ph ph-bell"></i> Alertas email</span><span class="switch on" onclick="this.classList.toggle('on')"></span></div>
+          </div>
+        </div>
+        <div class="section">
+          <div class="section-head">
+            <div class="section-title"><i class="ph ph-cpu"></i> Nós da Rede</div>
+            <div class="section-tag">3 DISPOSITIVOS</div>
+          </div>
+          <div>
+            <div class="cfg-row"><span class="cfg-label"><i class="ph ph-hard-drives"></i> Gateway principal</span><span class="cfg-val ok">● Nó 2</span></div>
+            <div class="cfg-row"><span class="cfg-label"><i class="ph ph-hard-drives"></i> Gateway contingência</span><span class="cfg-val ok">● Nó 3</span></div>
+            <div class="cfg-row"><span class="cfg-label"><i class="ph ph-arrow-elbow-down-right"></i> Rota mesh</span><span class="cfg-val">Nó 1 → Nó 3 → Nó 2</span></div>
+            <div class="cfg-row"><span class="cfg-label"><i class="ph ph-database"></i> Base de dados</span><span class="cfg-val">InfluxDB v2</span></div>
+            <div class="cfg-row"><span class="cfg-label"><i class="ph ph-cloud"></i> Dashboard</span><span class="cfg-val">Firebase RT</span></div>
+            <div class="cfg-row"><span class="cfg-label"><i class="ph ph-shield-check"></i> Segurança</span><span class="cfg-val ok">AES-128</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <footer class="foot">
+      <div class="bm"><i class="ph ph-circuitry"></i> ESP32 · SX1276 · MESHTASTIC</div>
+      <div>Devon Massaca · Licenciatura em Electrónica e Telecomunicações · 2026</div>
+      <div>REV 3.0.0 · DEMO</div>
+    </footer>
+  </div>
+</main>
+
+<div class="modal-back" id="ptModal" onclick="if(event.target===this)fecharModal()">
+  <div class="modal">
+    <div class="modal-head">
+      <div>
+        <div class="modal-eyebrow" id="mId">PT-001 · POSTO DE TRANSFORMAÇÃO</div>
+        <div class="modal-title" id="mTitle">PT Central</div>
+      </div>
+      <button class="modal-close" onclick="fecharModal()" aria-label="Fechar"><i class="ph ph-x"></i></button>
+    </div>
+    <div class="modal-grid" id="mGrid"></div>
+    <div class="modal-foot" id="mFoot"></div>
+  </div>
+</div>
+
+<div class="modal-back" id="handoverModal" onclick="if(event.target===this)fecharHandover()">
+  <div class="modal wide">
+    <div class="modal-head">
+      <div>
+        <div class="modal-eyebrow">TURNO MANHÃ · 06H–14H</div>
+        <div class="modal-title">Handover de Turno</div>
+      </div>
+      <button class="modal-close" onclick="fecharHandover()" aria-label="Fechar"><i class="ph ph-x"></i></button>
+    </div>
+    <div class="handover-body">
+      <div class="handover-section">
+        <div class="handover-title"><i class="ph ph-clipboard-text"></i> Resumo do Turno</div>
+        <div class="handover-summary">
+          <div class="line"><span>Duração</span><strong>8h 00min (06:00 → 14:00)</strong></div>
+          <div class="line"><span>Operador</span><strong>J. Silva</strong></div>
+          <div class="line"><span>Alertas tratados</span><strong>7</strong></div>
+          <div class="line"><span>Alertas em aberto</span><strong style="color:var(--rust-hi);">2 (1 crítico)</strong></div>
+          <div class="line"><span>PTs com OS aberta</span><strong>1 (PT-002)</strong></div>
+          <div class="line"><span>Relatórios à província</span><strong>32 enviados · 0 falhas</strong></div>
+        </div>
+      </div>
+      <div class="handover-section">
+        <div class="handover-title"><i class="ph ph-warning"></i> Pendências para o próximo turno</div>
+        <div class="checklist">
+          <div class="check-item danger" onclick="toggleCheck(this)">
+            <div class="check-box"><i class="ph-bold ph-check"></i></div>
+            <span class="check-text">PT-002 · Temperatura 47°C — aguarda técnico no local</span>
+            <i class="ph ph-warning-circle check-icon"></i>
+          </div>
+          <div class="check-item danger" onclick="toggleCheck(this)">
+            <div class="check-box"><i class="ph-bold ph-check"></i></div>
+            <span class="check-text">Linha L-02 · Verificar carga após as 15h</span>
+            <i class="ph ph-warning-circle check-icon"></i>
+          </div>
+          <div class="check-item" onclick="toggleCheck(this)">
+            <div class="check-box"><i class="ph-bold ph-check"></i></div>
+            <span class="check-text">Técnico contactado (ETA 45 min)</span>
+            <i class="ph ph-user check-icon"></i>
+          </div>
+          <div class="check-item" onclick="toggleCheck(this)">
+            <div class="check-box"><i class="ph-bold ph-check"></i></div>
+            <span class="check-text">Peça de substituição encomendada</span>
+            <i class="ph ph-package check-icon"></i>
+          </div>
+          <div class="check-item" onclick="toggleCheck(this)">
+            <div class="check-box"><i class="ph-bold ph-check"></i></div>
+            <span class="check-text">Relatório à província sincronizado</span>
+            <i class="ph ph-paper-plane-tilt check-icon"></i>
+          </div>
+        </div>
+      </div>
+      <div class="handover-section">
+        <div class="handover-title"><i class="ph ph-note-pencil"></i> Notas para o colega</div>
+        <textarea class="handover-textarea" placeholder="Adicionar observações relevantes para o próximo turno...">PT-002 em sobrecarga desde 14:20. Técnico já contactado, ETA 45 min. Monitorizar temperatura a cada 15 min.</textarea>
+      </div>
+    </div>
+    <div class="modal-foot" style="justify-content:flex-end;">
+      <button class="btn" onclick="fecharHandover()"><i class="ph ph-x"></i> <span>Cancelar</span></button>
+      <button class="btn" onclick="confirmarHandover()" style="background:rgba(208,130,74,0.15);border-color:var(--edge-copper);">
+        <i class="ph ph-check"></i> <span>Confirmar Handover</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="js/script.js" defer></script>
+</body>
+</html>
